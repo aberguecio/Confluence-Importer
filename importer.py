@@ -19,7 +19,7 @@ def formato_nombre(texto):
     
 
 def contenido(direccion, espacio, padre = False):
-    pae = [0,0,{}]
+    pae = [0,0,{},{}]
     lista = os.listdir(direccion)
     for archibo in lista:
         if archibo[-5:] == ".html":
@@ -34,8 +34,7 @@ def contenido(direccion, espacio, padre = False):
             # Remplaso imagenes
             images = soup.findAll('img')
             print("Preparando Archibo:",nombre_pagina)
-            if images:
-                print(" -Formateando Imagenes")
+
             for image in images:
                 image_parts = str(image['src']).split("/")
                 if image_parts[0] != "https:":
@@ -43,8 +42,6 @@ def contenido(direccion, espacio, padre = False):
             
             # Remplaso links
             links = soup.findAll('a', href=True)
-            if links:
-                print(" -Formateando Links")
             for link in links:
                 link_parts =str(link['href']).split("/")
                 nombre = formato_texto(str(link_parts[-1]))
@@ -57,20 +54,30 @@ def contenido(direccion, espacio, padre = False):
             print("Creando Pagina:",nombre_pagina)
             respuesta = request.post_page(espacio,nombre_pagina,str(format_soup),padre)
             if respuesta["statusCode"] == 200:
-                print("Respuesta:",respuesta["statusCode"])
                 pae[0]+=1
-                # Enter folder
                 if os.path.exists(direccion+"/"+archibo[:-5]):
                     pae_hijo =contenido(direccion+"/"+archibo[:-5], espacio, respuesta["id"])
                     pae[0]+=pae_hijo[0]
                     pae[1]+=pae_hijo[1]
                     pae[2].update(pae_hijo[2])
+                    pae[3].update(pae_hijo[3])
             else:
-                print("\nError:\n",respuesta,"\nSaltando subcarpetas...")
+                print("Error:\n",respuesta,)
                 pae[2][nombre_pagina] = str(respuesta)
 
-
-
+                print("Creando Pagina sin formato:",nombre_pagina)
+                respuesta = request.post_page(espacio,nombre_pagina,str(soup.body),padre)
+                if respuesta["statusCode"] == 200:
+                    pae[0]+=1
+                    if os.path.exists(direccion+"/"+archibo[:-5]):
+                        pae_hijo =contenido(direccion+"/"+archibo[:-5], espacio, respuesta["id"])
+                        pae[0]+=pae_hijo[0]
+                        pae[1]+=pae_hijo[1]
+                        pae[2].update(pae_hijo[2])
+                        pae[3].update(pae_hijo[3])
+                else:
+                    print("\nError:\n",respuesta,"\nSaltando subcarpetas...")
+                    pae[3][nombre_pagina] = str(respuesta)
 
         # Attaching file
         elif (archibo[-5] == "." or archibo[-4] == "."):
@@ -86,11 +93,14 @@ def contenido(direccion, espacio, padre = False):
 
 
 if __name__ == "__main__":
-    fin = contenido('Export pro',"TI19")
+    fin = contenido('Export pro',"TI20")
     print("\n>>>   RESULTADOS   <<<")
     print("Paginas creadas:",fin[0])
     print("Archibos adjuntos:",fin[1])
     print("Errores encontrados:",len(fin[2]))
     for error in fin[2]:
         print(error,fin[2][error])
+    print("ERRORES CRITICOS!:",len(fin[3]))
+    for error in fin[3]:
+        print(error,fin[3][error])
     print("\n>>>   FIN   <<<\n")
