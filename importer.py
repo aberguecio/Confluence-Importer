@@ -1,5 +1,5 @@
-import request
 import os
+import request
 from bs4 import BeautifulSoup
 
 def formato_texto(texto):
@@ -17,7 +17,6 @@ def formato_nombre(texto):
         nombre=nombre.replace(voc2[x],voc[x])
     return nombre
     
-
 def contenido(direccion, espacio, padre = False):
     pae = [0,0,{},{}]
     lista = os.listdir(direccion)
@@ -33,8 +32,6 @@ def contenido(direccion, espacio, padre = False):
 
             # Remplaso imagenes
             images = soup.findAll('img')
-            print("Preparando Archibo:",nombre_pagina)
-
             for image in images:
                 image_parts = str(image['src']).split("/")
                 if image_parts[0] != "https:":
@@ -44,11 +41,12 @@ def contenido(direccion, espacio, padre = False):
             links = soup.findAll('a', href=True)
             for link in links:
                 link_parts =str(link['href']).split("/")
-                nombre = formato_texto(str(link_parts[-1]))
-                if link_parts[-1][-5:] == ".html":
-                    format_soup = format_soup.replace(str(link), "<ac:link><ri:page ri:content-title='"+nombre[:-5]+"' /><ac:plain-text-link-body> <![CDATA["+nombre[:-5]+"]]></ac:plain-text-link-body></ac:link>")
-                else:
-                    format_soup = format_soup.replace(str(link), "<ac:link><ri:attachment ri:filename='"+nombre+"' /><ac:plain-text-link-body> <![CDATA["+nombre+"]]></ac:plain-text-link-body></ac:link>")
+                if link_parts[0] != "https:":
+                    nombre = formato_texto(str(link_parts[-1]))
+                    if link_parts[-1][-5:] == ".html":
+                        format_soup = format_soup.replace(str(link), "<ac:link><ri:page ri:content-title='"+nombre[:-5]+"' /><ac:plain-text-link-body> <![CDATA["+nombre[:-5]+"]]></ac:plain-text-link-body></ac:link>")
+                    else:
+                        format_soup = format_soup.replace(str(link), "<ac:link><ri:attachment ri:filename='"+nombre+"' /><ac:plain-text-link-body> <![CDATA["+nombre+"]]></ac:plain-text-link-body></ac:link>")
             
             #Send Post request whit body
             print("Creando Pagina:",nombre_pagina)
@@ -62,10 +60,8 @@ def contenido(direccion, espacio, padre = False):
                     pae[2].update(pae_hijo[2])
                     pae[3].update(pae_hijo[3])
             else:
-                print("Error:\n",respuesta,)
+                print("Error:\n",respuesta,"\nCreando Pagina sin formato:",nombre_pagina)
                 pae[2][nombre_pagina] = str(respuesta)
-
-                print("Creando Pagina sin formato:",nombre_pagina)
                 respuesta = request.post_page(espacio,nombre_pagina,str(soup.body),padre)
                 if respuesta["statusCode"] == 200:
                     pae[0]+=1
@@ -76,15 +72,14 @@ def contenido(direccion, espacio, padre = False):
                         pae[2].update(pae_hijo[2])
                         pae[3].update(pae_hijo[3])
                 else:
-                    print("\nError:\n",respuesta,"\nSaltando subcarpetas...")
+                    print("\nError Critico:\n",respuesta,"\nSaltando subcarpetas...")
                     pae[3][nombre_pagina] = str(respuesta)
 
         # Attaching file
         elif (archibo[-5] == "." or archibo[-4] == "."):
-            print("Adjuntando:",archibo)
+            print(" -Adjuntando:",archibo)
             respuesta = request.upload_file(direccion+"/"+archibo,padre)
             if respuesta["statusCode"] == 200:
-                print("Respuesta:",respuesta["statusCode"])
                 pae[1]+=1
             else:
                 print("\nError:\n",respuesta,"\n")
@@ -93,7 +88,7 @@ def contenido(direccion, espacio, padre = False):
 
 
 if __name__ == "__main__":
-    fin = contenido('Export pro',"TI20")
+    fin = contenido('Export pro',"NI")
     print("\n>>>   RESULTADOS   <<<")
     print("Paginas creadas:",fin[0])
     print("Archibos adjuntos:",fin[1])
