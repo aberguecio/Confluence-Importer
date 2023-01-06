@@ -48,5 +48,5 @@ if __name__ == "__main__":
     response2 = post_page("DOC","Imagen1",'body',response1["id"])
     #response3 = upload_image('jpg.jpg',response2["id"]) 
     #response4 = upload_image('grafico.png',response2["id"]) 
-    print(response1["statusCode"],response2["statusCode"],response3["statusCode"],response4["statusCode"])
+    print(response1["statusCode"],response2["statusCode"])
 
