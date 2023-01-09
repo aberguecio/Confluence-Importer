@@ -27,3 +27,4 @@ In importer.py edit the line 97:
 ```
 end_data = content("<notion export folder>", <confluence space id>")
 ```
+And run importer.py
