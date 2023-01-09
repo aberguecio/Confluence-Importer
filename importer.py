@@ -1,12 +1,12 @@
 import os
-import request
 from bs4 import BeautifulSoup
+import request
 
 def format_text(texto):
     name = texto.replace("%20"," ")
     name = name.replace("&","and")
-    for l in ["a","e","i","o","u","A","E","I","O","U"]:
-        name=name.replace(f"{l}%CC%81",str(l))
+    for leter in ["a","e","i","o","u","A","E","I","O","U"]:
+        name=name.replace(f"{leter}%CC%81",str(leter))
     return name
 
 def format_name(text):
@@ -36,24 +36,24 @@ def image_replace(images):
     return format_soup
 
 def pae_update(response,pae,folder,file,space):
-        pae[0]+=1
-        if os.path.exists(folder+"/"+file[:-5]):
-            pae_hijo = content(folder+"/"+file[:-5], space, response["id"])
-            pae[0]+=pae_hijo[0]
-            pae[1]+=pae_hijo[1]
-            pae[2].update(pae_hijo[2])
-            pae[3].update(pae_hijo[3])
-    
+    pae[0]+=1
+    if os.path.exists(folder+"/"+file[:-5]):
+        pae_hijo = content(folder+"/"+file[:-5], space, response["id"])
+        pae[0]+=pae_hijo[0]
+        pae[1]+=pae_hijo[1]
+        pae[2].update(pae_hijo[2])
+        pae[3].update(pae_hijo[3])
+
 def content(folder, space, father = False):
     pae = [0,0,{},{}]
-    list = os.listdir(folder)
-    for file in list:
+    folder_content = os.listdir(folder)
+    for file in folder_content:
         if file[-5:] == ".html":
             name_page = format_name(file[:-5])
 
             # Opening the html file
-            HTMLFile = open(folder+"/"+file, "r", encoding = 'UTF8')
-            index = HTMLFile.read()
+            with open(folder+"/"+file, "r", encoding = 'UTF8') as html_file:
+                index = html_file.read()
             soup = BeautifulSoup(index, 'lxml')
             format_soup = str(soup.body)
 
@@ -64,7 +64,7 @@ def content(folder, space, father = False):
             # Remplaso links
             links = soup.findAll('a', href=True)
             format_soup = link_replace(links)
-           
+
             #Send Post request whit body
             print("Creating Page:",name_page)
             response = request.post_page(space,name_page,str(format_soup),father)
