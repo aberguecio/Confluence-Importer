@@ -23,7 +23,7 @@ Create userdata.json with:
     "URL":"<url>"
 }
 ```
-In importer.py edit the line 92:
+In importer.py edit the line 97:
 ```
 end_data = content("<notion export folder>", <confluence space id>")
 ```
