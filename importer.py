@@ -23,12 +23,13 @@ def link_replace(links,format_soup):
     for link in links:
         link_parts =str(link['href']).split("/")
         if link_parts[0] != "https:" and link_parts[0] != "http:":
-            name = format_text(str(link_parts[-1]))
+            page_link = format_text(str(link_parts[-1]))
+            link_name = ' '.join(page_link.split()[:-1])
             if link_parts[-1][-5:] == ".html":
-                name = name[:-5]
-                format_soup = format_soup.replace(str(link), "<ac:link><ri:page ri:content-title='"+name+"' /><ac:plain-text-link-body> <![CDATA["+name+"]]></ac:plain-text-link-body></ac:link>")
+                page_link = page_link[:-5]
+                format_soup = format_soup.replace(str(link), "<ac:link><ri:page ri:content-title='"+page_link+"' /><ac:plain-text-link-body> <![CDATA["+link_name+"]]></ac:plain-text-link-body></ac:link>")
             else:
-                format_soup = format_soup.replace(str(link), "<ac:link><ri:attachment ri:filename='"+name+"' /><ac:plain-text-link-body> <![CDATA["+name+"]]></ac:plain-text-link-body></ac:link>")
+                format_soup = format_soup.replace(str(link), "<ac:link><ri:attachment ri:filename='"+page_link+"' /><ac:plain-text-link-body> <![CDATA["+link_name+"]]></ac:plain-text-link-body></ac:link>")
     return format_soup
 
 def image_replace(images,format_soup):
@@ -100,7 +101,7 @@ def content(folder, space, father = False):
 
 
 if __name__ == "__main__":
-    end_data = content('Export all',"EC3")
+    end_data = content('Importfolder\Export-1',"EC2")
     with open("info.txt", "w") as file:
         file.write(">>>  IFORMATION  <<<\n")
         file.write(f"Pages created:{end_data[0]}\n")
