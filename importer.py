@@ -2,25 +2,19 @@ import os
 from bs4 import BeautifulSoup
 import request
 
-def format_text(texto):
-    name = texto.replace("%20"," ")
+def format_text(text):
+    name = text.replace("%20"," ")
     name = name.replace("&","and")
     for leter in ["a","e","i","o","u","A","E","I","O","U"]:
         name=name.replace(f"{leter}%CC%81",str(leter))
     return name
 
-def format_name(text,names):
+def format_name(text):
     name = text.replace("&","and")
     voc = ["a","e","i","o","u","A","E","I","O","U"]
     voc2 = ["á","é","í","ó","ú","Á","É","Í","Ó","Ú"]
     for x in range(10):
         name=name.replace(voc2[x],voc[x])
-    #name = ' '.join(name.split()[:-1])
-    if name in names:
-        names[name] +=1
-        name = name + str(names[name])
-    else:
-        names[name] = 1
     return name
 
 def link_replace(links,format_soup):
@@ -29,7 +23,6 @@ def link_replace(links,format_soup):
         if link_parts[0] != "https:":
             name = format_text(str(link_parts[-1]))
             if link_parts[-1][-5:] == ".html":
-                #name = ' '.join(name.split()[:-1])
                 name = name[:-5]
                 format_soup = format_soup.replace(str(link), "<ac:link><ri:page ri:content-title='"+name+"' /><ac:plain-text-link-body> <![CDATA["+name+"]]></ac:plain-text-link-body></ac:link>")
             else:
@@ -47,32 +40,9 @@ def pae_update(pae,pae_hijo):
     pae[0]+=pae_hijo[0]
     pae[1]+=pae_hijo[1]
     pae[2].update(pae_hijo[2])
-    pae[3].update(pae_hijo[3])
+    pae[3].update(pae_hijo[3])  
 
-def post_request(space,soup,format_soup,father,pae,folder,file,names):
-    name_page = format_name(file[:-5],names)
-    print("Creating Page:",name_page)
-    response = request.post_page(space,name_page,str(format_soup),father)
-    if response["statusCode"] == 200:
-        pae[0]+=1
-        if os.path.exists(folder+"/"+file[:-5]):
-            pae_hijo = content(folder+"/"+file[:-5], space, names, response["id"])
-            pae_update(pae,pae_hijo)
-    else:
-        print("Error:\n",name_page,response,"\nCreating Raw Page:",name_page)
-        pae[2][name_page] = str(response)
-        response = request.post_page(space,name_page,str(soup.body),father)
-        
-        if response["statusCode"] == 200:
-            pae[0]+=1
-            if os.path.exists(folder+"/"+file[:-5]):
-                pae_hijo = content(folder+"/"+file[:-5], space, names, response["id"])
-                pae_update(pae,pae_hijo)
-        else:
-            print("\nCritical Error:\n",response,"\nSkipping Subfolders...")
-            pae[3][name_page] = str(response)
-
-def content(folder, space, names, father = False):
+def content(folder, space, father = False):
     pae = [0,0,{},{}]
     folder_content = os.listdir(folder)
     for file in folder_content:
@@ -93,10 +63,30 @@ def content(folder, space, names, father = False):
             format_soup = link_replace(links,format_soup)
 
             #Send Post request whit body
-            post_request(space,soup,format_soup,father,pae,folder,file,names)
+            name_page = format_name(file[:-5])
+            print("Creating Page:",name_page)
+            response = request.post_page(space,name_page,str(format_soup),father)
+            if response["statusCode"] == 200:
+                pae[0]+=1
+                if os.path.exists(folder+"/"+file[:-5]):
+                    pae_hijo = content(folder+"/"+file[:-5], space, response["id"])
+                    pae_update(pae,pae_hijo)
+            else:
+                print("Error:\n",name_page,response,"\nCreating Raw Page:",name_page)
+                pae[2][name_page] = str(response)
+
+                response = request.post_page(space,name_page,str(soup.body),father)
+                if response["statusCode"] == 200:
+                    pae[0]+=1
+                    if os.path.exists(folder+"/"+file[:-5]):
+                        pae_hijo = content(folder+"/"+file[:-5], space, response["id"])
+                        pae_update(pae,pae_hijo)
+                else:
+                    print("\nCritical Error:\n",name_page,response,"\nSkipping Subfolders...")
+                    pae[3][name_page] = str(response)
 
         # Attaching file
-        elif (file[-5] == "." or file[-4] == "."):
+        elif (file[-5] == "." or file[-4] == "." or file[-3] == "."):
             print("Attaching:", file)
             response = request.upload_file(folder+"/"+file,father)
             if response["statusCode"] == 200:
@@ -108,8 +98,7 @@ def content(folder, space, names, father = False):
 
 
 if __name__ == "__main__":
-    names = {}
-    end_data = content('Export all',"EC2",names)
+    end_data = content('Export pro',"ti25")
     print("\n>>>   IFORMATION   <<<")
     print("Pages created:",end_data[0])
     print("Attached files:",end_data[1])
