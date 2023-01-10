@@ -5,12 +5,14 @@ import request
 def format_text(text):
     name = text.replace("%20"," ")
     name = name.replace("&","and")
+    name = name.replace("'","´")
     for leter in ["a","e","i","o","u","A","E","I","O","U"]:
         name=name.replace(f"{leter}%CC%81",str(leter))
     return name
 
 def format_name(text):
     name = text.replace("&","and")
+    name = name.replace("'","´")
     voc = ["a","e","i","o","u","A","E","I","O","U"]
     voc2 = ["á","é","í","ó","ú","Á","É","Í","Ó","Ú"]
     for x in range(10):
@@ -20,7 +22,7 @@ def format_name(text):
 def link_replace(links,format_soup):
     for link in links:
         link_parts =str(link['href']).split("/")
-        if link_parts[0] != "https:":
+        if link_parts[0] != "https:" and link_parts[0] != "http:":
             name = format_text(str(link_parts[-1]))
             if link_parts[-1][-5:] == ".html":
                 name = name[:-5]
@@ -32,7 +34,7 @@ def link_replace(links,format_soup):
 def image_replace(images,format_soup):
     for image in images:
         image_parts = str(image['src']).split("/")
-        if image_parts[0] != "https:":
+        if image_parts[0] != "https:" and image_parts[0] != "http:":
             format_soup = format_soup.replace(str(image), '<ac:image><ri:attachment ri:filename="'+str(image_parts[-1].replace("%20"," "))+'" /></ac:image>')
     return format_soup
 
@@ -98,14 +100,15 @@ def content(folder, space, father = False):
 
 
 if __name__ == "__main__":
-    end_data = content('Export pro',"ti25")
-    print("\n>>>   IFORMATION   <<<")
-    print("Pages created:",end_data[0])
-    print("Attached files:",end_data[1])
-    print("Errors found:",len(end_data[2]))
-    for error in end_data[2]:
-        print(error,end_data[2][error])
-    print("CRITICAL ERRORS!:",len(end_data[3]))
-    for error in end_data[3]:
-        print(error,end_data[3][error])
-    print(">>>   END   <<<\n")
+    end_data = content('Export all',"EC3")
+    with open("info.txt", "w") as file:
+        file.write(">>>  IFORMATION  <<<\n")
+        file.write(f"Pages created:{end_data[0]}\n")
+        file.write(f"Attached files:{end_data[1]}\n")
+        file.write(f"Errors found:{len(end_data[2])}\n")
+        for error in end_data[2]:
+            file.write(f"{error}: {end_data[2][error]}\n")
+        file.write(f"CRITICAL ERRORS:{len(end_data[3])}\n")
+        for error in end_data[3]:
+            file.write(f"{error}: {end_data[3][error]}\n")
+        file.write(">>>   END   <<<")
