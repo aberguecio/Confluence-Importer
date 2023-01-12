@@ -1,10 +1,15 @@
 import os
 from bs4 import BeautifulSoup
 import request
+import time
 
 def format_text(text):
     name = text.replace("%20"," ")
     name = name.replace("&","and")
+    name = name.replace("%C2%B0","°")
+    name = name.replace("n%CC%83","ñ")
+    name = name.replace("%E2%80%98","‘")
+    name = name.replace("%E2%80%99","’")
     name = name.replace("'","´")
     for leter in ["a","e","i","o","u","A","E","I","O","U"]:
         name=name.replace(f"{leter}%CC%81",str(leter))
@@ -43,10 +48,11 @@ def pae_update(pae,pae_hijo):
     pae[0]+=pae_hijo[0]
     pae[1]+=pae_hijo[1]
     pae[2].update(pae_hijo[2])
-    pae[3].update(pae_hijo[3])  
+    pae[3].update(pae_hijo[3]) 
+    pae[4].update(pae_hijo[4]) 
 
 def content(folder, space, father = False):
-    pae = [0,0,{},{}]
+    pae = [0,0,{},{},{}]
     folder_content = os.listdir(folder)
     for file in folder_content:
         if file[-5:] == ".html":
@@ -90,26 +96,42 @@ def content(folder, space, father = False):
 
         # Attaching file
         elif (file[-5] == "." or file[-4] == "." or file[-3] == "."):
-            print("Attaching:", file)
-            response = request.upload_file(folder+"/"+file,father)
-            if response["statusCode"] == 200:
-                pae[1]+=1
+            print("Attaching file:", file)
+            size = os.path.getsize(folder+"/"+file)
+            if size < 104857600:
+                response = request.upload_file(folder+"/"+file,father)
+                if response["statusCode"] == 200:
+                    pae[1]+=1
+                else:
+                    print("\nError:\n",response,"\n")
+                    pae[2][file] = str(response)
             else:
-                print("\nError:\n",response,"\n")
-                pae[2][file] = str(response)
+                print(f"File '{file}' to big")
+                pae[4][file] = [folder,size]
+
     return pae
 
+def timer(start_time):
+    total_time = int(time.time() - start_time)
+    total_time = time.strftime('%H:%M:%S', time.gmtime(total_time))
+    return total_time
 
 if __name__ == "__main__":
-    end_data = content('Importfolder\Export-1',"EC2")
+    start_time = time.time()
+    end_data = content('Importfolder\Export',"EC6")
+    total_time = timer(start_time)
     with open("info.txt", "w") as file:
         file.write(">>>  IFORMATION  <<<\n")
-        file.write(f"Pages created:{end_data[0]}\n")
-        file.write(f"Attached files:{end_data[1]}\n")
+        file.write(f"Pages Created:{end_data[0]}\n")
+        file.write(f"Attached Files:{end_data[1]}\n")
+        file.write(f"Execution Time {total_time}\n" )
         file.write(f"Errors found:{len(end_data[2])}\n")
         for error in end_data[2]:
             file.write(f"{error}: {end_data[2][error]}\n")
         file.write(f"CRITICAL ERRORS:{len(end_data[3])}\n")
         for error in end_data[3]:
             file.write(f"{error}: {end_data[3][error]}\n")
+        file.write(f"Files to big:{len(end_data[4])}\n")
+        for error in end_data[4]:
+            file.write(f"{error}: {end_data[4][error]}\n")
         file.write(">>>   END   <<<")
