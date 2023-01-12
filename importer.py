@@ -98,7 +98,7 @@ def content(folder, space, father = False):
         elif (file[-5] == "." or file[-4] == "." or file[-3] == "."):
             print("Attaching file:", file)
             size = os.path.getsize(folder+"/"+file)
-            if size < 104857600:
+            if size < 10737418240: # Confluence default: 104857600
                 response = request.upload_file(folder+"/"+file,father)
                 if response["statusCode"] == 200:
                     pae[1]+=1
