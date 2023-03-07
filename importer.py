@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 import request
 import time
 
+defoult_size = 104857600 # Confluence default: 104857600
+
 def format_text(text):
     name = text.replace("%20"," ")
     name = name.replace("&","and")
@@ -98,13 +100,18 @@ def content(folder, space, father = False):
         elif (file[-5] == "." or file[-4] == "." or file[-3] == "."):
             print("Attaching file:", file)
             size = os.path.getsize(folder+"/"+file)
-            if size < 10737418240: # Confluence default: 104857600
-                response = request.upload_file(folder+"/"+file,father)
-                if response["statusCode"] == 200:
-                    pae[1]+=1
+            if size < defoult_size: # Confluence default: 104857600
+                try:
+                    response = request.upload_file(folder+"/"+file,father)
+                except:
+                    pae[2][file] = f"Error ataching {file} of size {size}"
+                    print("Error ataching"+file)
                 else:
-                    print("\nError:\n",response,"\n")
-                    pae[2][file] = str(response)
+                    if response["statusCode"] == 200:
+                        pae[1]+=1
+                    else:
+                        print("\nError:\n",response,"\n")
+                        pae[2][file] = str(response)
             else:
                 print(f"File '{file}' to big")
                 pae[4][file] = [folder,size]
@@ -118,7 +125,7 @@ def timer(start_time):
 
 if __name__ == "__main__":
     start_time = time.time()
-    end_data = content('Importfolder\Export',"EC6")
+    end_data = content("<notion export folder>", "<confluence space id>")
     total_time = timer(start_time)
     with open("info.txt", "w") as file:
         file.write(">>>  IFORMATION  <<<\n")
